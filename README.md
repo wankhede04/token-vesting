@@ -33,3 +33,5 @@ Remove artifacts
 yarn clean
 ```
 
+## Footnote
+Developed by [wankhedeO4](https://github.com/wankhede04)
