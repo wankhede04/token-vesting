@@ -12,6 +12,7 @@ contract EquityVesting is AccessControl {
     }
     struct Employee {
         bytes4 class;
+        uint256 amountClaimed;
         uint256 vestingCliff;
         uint256 lastUpdated;
     }
@@ -26,14 +27,18 @@ contract EquityVesting is AccessControl {
     mapping(address => Employee) public employeeDetails;
     IERC20Metadata public equityToken;
 
-    event EmployeeAdded(address[] recipients, bytes4[] recipientClass, uint256 vestingCliff);
-    event EquityClaimed(address indexed recipient, uint256 amount);
+    event EmployeeAdded(
+        address[] recipients,
+        bytes4[] recipientClass,
+        uint256 vestingCliff
+    );
 
     constructor(IERC20Metadata _equityToken, address _admin) {
         equityToken = _equityToken;
-        _updateEquity(Equity(1000, 2500, 365 days), CXO);
-        _updateEquity(Equity(800, 2500, 365 days), SENIOR_MANAGER);
-        _updateEquity(Equity(400, 5000, 365 days), OTHER);
+        uint256 tokenDecimalPrecision = 10 ** _equityToken.decimals();
+        _updateEquity(Equity(1000 * tokenDecimalPrecision, 2500, 365 days), CXO);
+        _updateEquity(Equity(800 * tokenDecimalPrecision, 2500, 365 days), SENIOR_MANAGER);
+        _updateEquity(Equity(400 * tokenDecimalPrecision, 5000, 365 days), OTHER);
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
     }
 
@@ -51,11 +56,16 @@ contract EquityVesting is AccessControl {
         for (uint256 index = 0; index < totalRecipients; index++) {
             employeeDetails[_recipients[index]] = Employee(
                 _recipientClass[index],
+                0,
                 currentTimestamp + year,
                 currentTimestamp
             );
         }
-        emit EmployeeAdded(_recipients, _recipientClass, currentTimestamp + year);
+        emit EmployeeAdded(
+            _recipients,
+            _recipientClass,
+            currentTimestamp + year
+        );
     }
 
     function claimEquity() external returns (uint256 amount) {
@@ -66,6 +76,7 @@ contract EquityVesting is AccessControl {
 
         Employee storage employee = employeeDetails[recipient];
         employee.lastUpdated += interval;
+        employee.amountClaimed += amount;
         equityToken.transfer(recipient, amount);
     }
 
@@ -76,19 +87,25 @@ contract EquityVesting is AccessControl {
     {
         uint256 currentTimestamp = block.timestamp;
         Employee memory employee = employeeDetails[recipient];
-        // If Employee.vestingCliff == Equity.distributionInterval, this check is irrelevant.
-        if (currentTimestamp < employee.vestingCliff) amount = 0;
-        // TODO: add logic when vesting period is complete
         Equity memory equity = equityByClass[employee.class];
+        // If Employee.vestingCliff == Equity.distributionInterval, this check is irrelevant.
+        // For Employee.amountClaimed == Equity.vestingAmount, employee claimed total vesting
+        if (
+            currentTimestamp < employee.vestingCliff ||
+            employee.amountClaimed == equity.vestingAmount
+        ) {
+            return (0, equity.distributionInterval);
+        }
+
         if (
             currentTimestamp >
             equity.distributionInterval + employee.lastUpdated
         ) {
-            uint256 unclaimedPeriod = (currentTimestamp -
+            uint256 unclaimedCount = (currentTimestamp -
                 employee.lastUpdated) / equity.distributionInterval;
             amount =
                 (equity.vestingAmount *
-                    (equity.percentRelease * unclaimedPeriod)) /
+                    (equity.percentRelease * unclaimedCount)) /
                 PERCENT_BASE;
             interval = equity.distributionInterval;
         }
