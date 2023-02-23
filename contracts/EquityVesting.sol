@@ -160,17 +160,14 @@ contract EquityVesting is AccessControl {
             employee.amountClaimed == equity.vestingAmount
         ) {
             return (0, equity.distributionInterval);
-        }
-
-        if (
-            currentTimestamp >
-            equity.distributionInterval + employee.lastUpdated
-        ) {
+        } else {
             uint256 unclaimedCount = (currentTimestamp - employee.lastUpdated) /
                 equity.distributionInterval;
-            amount =
-                (equity.vestingAmount * (equity.releaseRate * unclaimedCount)) /
-                PERCENT_BASE;
+            uint256 totalRate = unclaimedCount * equity.releaseRate >=
+                PERCENT_BASE
+                ? PERCENT_BASE
+                : unclaimedCount * equity.releaseRate;
+            amount = (equity.vestingAmount * totalRate) / PERCENT_BASE;
             interval = equity.distributionInterval;
         }
     }
