@@ -26,6 +26,9 @@ contract EquityVesting is AccessControl {
     mapping(address => Employee) public employeeDetails;
     IERC20Metadata public equityToken;
 
+    event EmployeeAdded(address[] recipients, bytes4[] recipientClass, uint256 vestingCliff);
+    event EquityClaimed(address indexed recipient, uint256 amount);
+
     constructor(IERC20Metadata _equityToken, address _admin) {
         equityToken = _equityToken;
         _updateEquity(Equity(1000, 2500, 365 days), CXO);
@@ -52,7 +55,7 @@ contract EquityVesting is AccessControl {
                 currentTimestamp
             );
         }
-        // TODO: add event
+        emit EmployeeAdded(_recipients, _recipientClass, currentTimestamp + year);
     }
 
     function claimEquity() external returns (uint256 amount) {
@@ -75,7 +78,7 @@ contract EquityVesting is AccessControl {
         Employee memory employee = employeeDetails[recipient];
         // If Employee.vestingCliff == Equity.distributionInterval, this check is irrelevant.
         if (currentTimestamp < employee.vestingCliff) amount = 0;
-
+        // TODO: add logic when vesting period is complete
         Equity memory equity = equityByClass[employee.class];
         if (
             currentTimestamp >
