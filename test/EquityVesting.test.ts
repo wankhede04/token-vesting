@@ -110,6 +110,15 @@ describe('EquityVesting', function () {
           'EquityVesting: zero amount to claim',
         )
       })
+
+      it('Should not claim equity token before vesting cliff', async () => {
+        const current = await time.latest()
+        await time.increaseTo(current + 3600)
+
+        await expect(vesting.connect(tony).claimEquity()).revertedWith(
+          'EquityVesting: zero amount to claim',
+        )
+      })
     })
   })
 })
