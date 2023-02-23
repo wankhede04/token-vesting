@@ -19,11 +19,14 @@ contract EquityVesting is AccessControl {
 
     uint256 private constant _YEAR = 365 days;
     // keccak256("CXO")
-    bytes32 private constant CXO = 0xb7f414843e68da0b34c0fe72d1e077bca7ad8d815444157b9e3e6ccc0d4f0b68;
+    bytes32 private constant CXO =
+        0xb7f414843e68da0b34c0fe72d1e077bca7ad8d815444157b9e3e6ccc0d4f0b68;
     // keccak256("SENIOR_MANAGER")
-    bytes32 private constant SENIOR_MANAGER = 0xd3d780eaccdeb67c1d22abd19ec5480ce7d3f8b12b05d8346b4a7b5d8a14a8ad;
+    bytes32 private constant SENIOR_MANAGER =
+        0xd3d780eaccdeb67c1d22abd19ec5480ce7d3f8b12b05d8346b4a7b5d8a14a8ad;
     // keccak256("OTHER")
-    bytes32 private constant OTHER = 0x35b65de3b579a9ce74763d33e74f08dcef72a66ee55fd214549ace2be760d16d;
+    bytes32 private constant OTHER =
+        0x35b65de3b579a9ce74763d33e74f08dcef72a66ee55fd214549ace2be760d16d;
     // Used to keep the division ratio of EquityClass.releaseRate
     uint256 public constant PERCENT_BASE = 10000;
     // Store equity class details by class {CXO, SENIOR_MANAGER, OTHER}
@@ -47,11 +50,27 @@ contract EquityVesting is AccessControl {
     constructor(IERC20 _equityToken, address _admin) {
         equityToken = _equityToken;
 
-        _updateEquity(EquityClass(1000000000000000000000, 2500, _YEAR, _YEAR), CXO);
-        _updateEquity(EquityClass(800000000000000000000, 2500, _YEAR, _YEAR), SENIOR_MANAGER);
-        _updateEquity(EquityClass(400000000000000000000, 5000, _YEAR, _YEAR), OTHER);
+        _createEquityClass(
+            EquityClass(1000000000000000000000, 2500, _YEAR, _YEAR),
+            CXO
+        );
+        _createEquityClass(
+            EquityClass(800000000000000000000, 2500, _YEAR, _YEAR),
+            SENIOR_MANAGER
+        );
+        _createEquityClass(
+            EquityClass(400000000000000000000, 5000, _YEAR, _YEAR),
+            OTHER
+        );
         // Note: We can add more roles to increase security, if required
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+    }
+
+    function createEquityClass(EquityClass memory _equity, bytes32 _class)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        _createEquityClass(_equity, _class);
     }
 
     function addEmployees(
@@ -92,8 +111,6 @@ contract EquityVesting is AccessControl {
         emit EquityClaimed(recipient, amount, employee.lastUpdated + _YEAR);
     }
 
-    // Add external for createequityclass
-
     function getEquityToClaim(address recipient)
         public
         view
@@ -124,7 +141,9 @@ contract EquityVesting is AccessControl {
         }
     }
 
-    function _updateEquity(EquityClass memory _equity, bytes32 class) private {
+    function _createEquityClass(EquityClass memory _equity, bytes32 class)
+        private
+    {
         equityByClass[class] = _equity;
     }
 }
