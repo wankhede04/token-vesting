@@ -4,6 +4,12 @@ pragma solidity =0.8.17;
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/**
+ * @title EquityVesting contract
+ * @author [wankhede04]
+ *
+ * @dev Claim equity tokens according to vesting period of a user
+ */
 contract EquityVesting is AccessControl {
     struct EquityClass {
         uint256 vestingAmount;
@@ -17,6 +23,7 @@ contract EquityVesting is AccessControl {
         uint256 lastUpdated;
     }
 
+    // convert to seconds, 31536000
     uint256 private constant _YEAR = 365 days;
     // keccak256("CXO")
     bytes32 private constant CXO =
@@ -47,6 +54,12 @@ contract EquityVesting is AccessControl {
         uint256 nextUnlock
     );
 
+    /**
+     * @dev Sets equity token, grant admin role and add equity classes
+     *
+     * @param _equityToken Address of claiming token
+     * @param _admin Address of default admin
+     */
     constructor(IERC20 _equityToken, address _admin) {
         equityToken = _equityToken;
 
@@ -66,6 +79,12 @@ contract EquityVesting is AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
     }
 
+    /**
+     * @dev Add equity class. Should accessed by default admin only
+     *
+     * @param _equity Var of EquityClass struct
+     * @param _class keccack value of string class
+     */
     function createEquityClass(EquityClass memory _equity, bytes32 _class)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -73,6 +92,13 @@ contract EquityVesting is AccessControl {
         _createEquityClass(_equity, _class);
     }
 
+    /**
+     * @dev Add batch employees with their respective class
+     * - Should accessed by default admin only
+     *
+     * @param _recipients Array of address of employees
+     * @param _recipientClass Array of hashed(keccak) of class string
+     */
     function addEmployees(
         address[] memory _recipients,
         bytes32[] memory _recipientClass
@@ -98,6 +124,9 @@ contract EquityVesting is AccessControl {
         );
     }
 
+    /**
+     * @dev Employees can claim equity after tokens are unlocked
+     */
     function claimEquity() external returns (uint256 amount) {
         address recipient = _msgSender();
         uint256 interval;
@@ -111,13 +140,18 @@ contract EquityVesting is AccessControl {
         emit EquityClaimed(recipient, amount, employee.lastUpdated + _YEAR);
     }
 
-    function getEquityToClaim(address recipient)
+    /**
+     * @dev Calculate equity to claim as per vesting cliff and interval of unlock
+     *
+     * @param _recipient Address of employee
+     */
+    function getEquityToClaim(address _recipient)
         public
         view
         returns (uint256 amount, uint256 interval)
     {
         uint256 currentTimestamp = block.timestamp;
-        EmployeeDetail memory employee = employeeDetails[recipient];
+        EmployeeDetail memory employee = employeeDetails[_recipient];
         EquityClass memory equity = equityByClass[employee.class];
 
         // For EmployeeDetail.amountClaimed == EquityClass.vestingAmount, employee claimed total vesting
