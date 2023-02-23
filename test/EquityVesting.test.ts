@@ -89,5 +89,17 @@ describe('EquityVesting', function () {
         )
       })
     })
+
+    describe('Negative', function () {
+      it('Should not claim equity token after total claim', async () => {
+        const current = await time.latest()
+        await time.increaseTo(current + yearInSeconds * 4)
+        await (await vesting.connect(tony).claimEquity()).wait()
+
+        await expect(vesting.connect(tony).claimEquity()).revertedWith(
+          'EquityVesting: zero amount to claim',
+        )
+      })
+    })
   })
 })
