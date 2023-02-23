@@ -32,6 +32,3 @@ Remove artifacts
 ```sh
 yarn clean
 ```
-
-## Footnote
-Developed by [wankhedeO4](https://github.com/wankhede04)
