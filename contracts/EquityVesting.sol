@@ -10,14 +10,19 @@ contract EquityVesting {
         uint256 distributionInterval;
     }
 
+    struct Employee {
+        bytes4 class;
+        uint256 vestingCliff;
+        uint256 lastUpdated;
+    }
+
     bytes4 public constant CXO = bytes4(keccak256(abi.encodePacked("CXO")));
     bytes4 public constant SENIOR_MANAGER = bytes4(keccak256(abi.encodePacked("SENIOR_MANAGER")));
     bytes4 public constant OTHER = bytes4(keccak256(abi.encodePacked("OTHER")));
     uint256 public constant PERCENT_BASE = 10000;
-    uint256 public constant VESTING_CLIFF = 356 days;
 
     mapping(bytes4 => Equity) public equityByClass;
-    mapping(address => bytes4) public classOfEmployee;
+    mapping(address => Employee) public employeeDetails;
     IERC20Metadata public equityToken;
 
     constructor(IERC20Metadata _equityToken) {
@@ -39,14 +44,34 @@ contract EquityVesting {
         ), OTHER);
     }
 
-    function addEmployees(address[] memory recipients, bytes4[] memory recipientClass) external {
+    function addEmployees(address[] memory _recipients, bytes4[] memory _recipientClass) external {
         // TODO: add access to admin
-        require(recipients.length == recipientClass.length, "EquityVesting: invalid array data");
-        uint256 totalRecipients = recipients.length;
+        require(_recipients.length == _recipientClass.length, "EquityVesting: invalid array data");
+        uint256 totalRecipients = _recipients.length;
+        uint256 currentTimestamp = block.timestamp;
+        uint256 year = 365 days;
         for (uint256 index = 0; index < totalRecipients; index++) {
-            classOfEmployee[recipients[index]] = recipientClass[index];
+            employeeDetails[_recipients[index]] = Employee(
+                _recipientClass[index],
+                currentTimestamp + year,
+                currentTimestamp
+            );
         }
         // TODO: add event
+    }
+
+    function getEquityToClaim(address recipient) external view returns (uint256 amount) {
+        uint256 currentTimestamp = block.timestamp;
+        Employee memory employee = employeeDetails[recipient];
+        // If Employee.vestingCliff == Equity.distributionInterval, this check is irrelevant.
+        if (currentTimestamp < employee.vestingCliff) amount = 0;
+
+        Equity memory equity = equityByClass[employee.class];
+        if (currentTimestamp > equity.distributionInterval + employee.lastUpdated) {
+            uint256 unclaimedPeriod = (currentTimestamp - employee.lastUpdated) / equity.distributionInterval;
+            amount = (equity.vestingAmount * (equity.percentRelease * unclaimedPeriod)) / PERCENT_BASE;
+            // in setter, employee.lastUpdated += employee.vestingCliff;
+        }
     }
 
     function _updateEquity(Equity memory _equity, bytes4 class) private {
