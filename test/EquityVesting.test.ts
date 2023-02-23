@@ -100,6 +100,16 @@ describe('EquityVesting', function () {
           'EquityVesting: zero amount to claim',
         )
       })
+
+      it('Should not claim equity token twice a year', async () => {
+        const current = await time.latest()
+        await time.increaseTo(current + yearInSeconds)
+        await (await vesting.connect(tony).claimEquity()).wait()
+
+        await expect(vesting.connect(tony).claimEquity()).revertedWith(
+          'EquityVesting: zero amount to claim',
+        )
+      })
     })
   })
 })
