@@ -49,9 +49,9 @@ describe('EquityVesting', function () {
     let chris: Signer
     let hugh: Signer
     const yearInSeconds = 31536000
-    const CXO = '0xb7f41484'
-    const SENIOR_MANAGER = '0xd3d780ea'
-    const OTHER = '0x35b65de3'
+    const CXO = '0xb7f414843e68da0b34c0fe72d1e077bca7ad8d815444157b9e3e6ccc0d4f0b68'
+    const SENIOR_MANAGER = '0xd3d780eaccdeb67c1d22abd19ec5480ce7d3f8b12b05d8346b4a7b5d8a14a8ad'
+    const OTHER = '0x35b65de3b579a9ce74763d33e74f08dcef72a66ee55fd214549ace2be760d16d'
     this.beforeEach(async () => {
       ;[, , tony, chris, hugh] = await ethers.getSigners()
       await (
