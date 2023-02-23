@@ -5,7 +5,7 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
 
 contract EquityVesting {
     struct Equity {
-        uint256 totalAmount;
+        uint256 vestingAmount;
         uint256 percentRelease;
         uint256 distributionInterval;
     }
