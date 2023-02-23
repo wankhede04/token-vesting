@@ -44,7 +44,7 @@ yarn test
 
 Deploy contracts
 ```sh
-NETWORK=mumbai yarn deploy
+NETWORK=<network> yarn deploy
 ```
 
 Remove artifacts
