@@ -10,15 +10,14 @@ contract EquityVesting {
         uint256 distributionInterval;
     }
 
-    // Generated using bytes4(keccak256(abi.encodePacked("Order")))
     bytes4 public constant CXO = bytes4(keccak256(abi.encodePacked("CXO")));
-    // Generated using bytes4(keccak256(abi.encodePacked("StopLossLimitOrder")))
     bytes4 public constant SENIOR_MANAGER = bytes4(keccak256(abi.encodePacked("SENIOR_MANAGER")));
-    // Generated using bytes4(keccak256(abi.encodePacked("TakeProfitLimitOrder")))
     bytes4 public constant OTHER = bytes4(keccak256(abi.encodePacked("OTHER")));
     uint256 public constant PERCENT_BASE = 10000;
+    uint256 public constant VESTING_CLIFF = 356 days;
 
     mapping(bytes4 => Equity) public equityByClass;
+    mapping(address => bytes4) public classOfEmployee;
     IERC20Metadata public equityToken;
 
     constructor(IERC20Metadata _equityToken) {
@@ -38,6 +37,16 @@ contract EquityVesting {
             5000,
             365 days
         ), OTHER);
+    }
+
+    function addEmployees(address[] memory recipients, bytes4[] memory recipientClass) external {
+        // TODO: add access to admin
+        require(recipients.length == recipientClass.length, "EquityVesting: invalid array data");
+        uint256 totalRecipients = recipients.length;
+        for (uint256 index = 0; index < totalRecipients; index++) {
+            classOfEmployee[recipients[index]] = recipientClass[index];
+        }
+        // TODO: add event
     }
 
     function _updateEquity(Equity memory _equity, bytes4 class) private {
