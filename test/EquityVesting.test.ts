@@ -43,4 +43,27 @@ describe('EquityVesting', function () {
     const receipt = await vesting.deployed()
     expect(receipt.deployTransaction.confirmations).not.equal(0)
   })
+
+  describe('Claim Equity', function () {
+    let tony: Signer
+    let chris: Signer
+    let hugh: Signer
+    const yearInSeconds = 31536000
+    const CXO = '0xb7f41484'
+    const SENIOR_MANAGER = '0xd3d780ea'
+    const OTHER = '0x35b65de3'
+    this.beforeEach(async () => {
+      ;[, , tony, chris, hugh] = await ethers.getSigners()
+      await (
+        await vesting.addEmployees(
+          [
+            await tony.getAddress(),
+            await chris.getAddress(),
+            await hugh.getAddress(),
+          ],
+          [CXO, SENIOR_MANAGER, OTHER],
+        )
+      ).wait()
+    })
+  })
 })
