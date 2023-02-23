@@ -77,6 +77,17 @@ describe('EquityVesting', function () {
           ethers.utils.parseEther('250'),
         )
       })
+
+      it('Should claim equity token after vesting end', async () => {
+        const balanceBefore = await token.balanceOf(await tony.getAddress())
+        const current = await time.latest()
+        await time.increaseTo(current + yearInSeconds * 4)
+        await (await vesting.connect(tony).claimEquity()).wait()
+        const balanceAfter = await token.balanceOf(await tony.getAddress())
+        expect(balanceAfter.sub(balanceBefore)).equal(
+          ethers.utils.parseEther('1000'),
+        )
+      })
     })
   })
 })
