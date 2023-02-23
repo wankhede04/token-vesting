@@ -70,12 +70,14 @@ describe('EquityVesting', function () {
       it('Should claim equity token', async () => {
         const balanceBefore = await token.balanceOf(await tony.getAddress())
         const current = await time.latest()
-        await time.increaseTo(current + yearInSeconds)
+        await time.increaseTo(current + yearInSeconds + 1)
+        const claimAmount = await vesting.getEquityToClaim(await tony.getAddress())
         await (await vesting.connect(tony).claimEquity()).wait()
         const balanceAfter = await token.balanceOf(await tony.getAddress())
         expect(balanceAfter.sub(balanceBefore)).equal(
           ethers.utils.parseEther('250'),
         )
+        expect(balanceAfter.sub(balanceBefore)).equal(claimAmount.amount)
       })
 
       it('Should claim equity token after vesting end', async () => {
