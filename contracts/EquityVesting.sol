@@ -11,7 +11,7 @@ contract EquityVesting is AccessControl {
         uint256 cliffDuration;
         uint256 distributionInterval;
     }
-    struct Employee {
+    struct EmployeeDetail {
         bytes32 class;
         uint256 amountClaimed;
         uint256 lastUpdated;
@@ -32,7 +32,7 @@ contract EquityVesting is AccessControl {
     // Store equity class details by class {CXO, SENIOR_MANAGER, OTHER}
     mapping(bytes32 => EquityClass) public equityByClass;
     // Store employee details by employee address
-    mapping(address => Employee) public employeeDetails;
+    mapping(address => EmployeeDetail) public employeeDetails;
     // Interfaced address of claiming token
     IERC20 public equityToken;
 
@@ -85,7 +85,7 @@ contract EquityVesting is AccessControl {
 
         uint256 currentTimestamp = block.timestamp;
         for (uint256 index = 0; index < totalRecipients; index++) {
-            employeeDetails[_recipients[index]] = Employee(
+            employeeDetails[_recipients[index]] = EmployeeDetail(
                 _recipientClass[index],
                 0,
                 currentTimestamp
@@ -104,7 +104,7 @@ contract EquityVesting is AccessControl {
         (amount, interval) = getEquityToClaim(recipient);
         require(amount != 0, "EquityVesting: zero amount to claim");
 
-        Employee storage employee = employeeDetails[recipient];
+        EmployeeDetail storage employee = employeeDetails[recipient];
         employee.lastUpdated += interval;
         employee.amountClaimed += amount;
         equityToken.transfer(recipient, amount);
@@ -117,10 +117,10 @@ contract EquityVesting is AccessControl {
         returns (uint256 amount, uint256 interval)
     {
         uint256 currentTimestamp = block.timestamp;
-        Employee memory employee = employeeDetails[recipient];
+        EmployeeDetail memory employee = employeeDetails[recipient];
         EquityClass memory equity = equityByClass[employee.class];
 
-        // For Employee.amountClaimed == EquityClass.vestingAmount, employee claimed total vesting
+        // For EmployeeDetail.amountClaimed == EquityClass.vestingAmount, employee claimed total vesting
         if (
             currentTimestamp < (employee.lastUpdated + equity.cliffDuration) ||
             employee.amountClaimed == equity.vestingAmount
