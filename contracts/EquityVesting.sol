@@ -154,10 +154,9 @@ contract EquityVesting is AccessControl {
         EmployeeDetail memory employee = employeeDetails[_recipient];
         EquityClass memory equity = equityByClass[employee.class];
 
-        // For EmployeeDetail.amountClaimed == EquityClass.vestingAmount, employee claimed total vesting
         if (
-            currentTimestamp < (employee.lastUpdated + equity.cliffDuration) ||
-            employee.amountClaimed == equity.vestingAmount
+            currentTimestamp < (employee.lastUpdated + equity.cliffDuration) || // vesting cliff not reached
+            employee.amountClaimed == equity.vestingAmount // claimed total vesting
         ) {
             return (0, equity.distributionInterval);
         } else {
